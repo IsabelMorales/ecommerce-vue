@@ -1,0 +1,4 @@
+@import 'tailwindcss';
+
+/* Configuración para evitar conflictos con Vuetify */
+/* Tailwind preflight está desactivado por defecto cuando se usa con otros frameworks */
