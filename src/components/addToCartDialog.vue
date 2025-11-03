@@ -107,10 +107,7 @@ watch(
 
       <v-card-text class="pa-4 pa-md-6">
         <div class="d-flex flex-column flex-md-row mb-4">
-          <div
-            style="flex-shrink: 0; max-width: 200px; margin: 0 auto"
-            class="w-100 w-md-24 h-32 h-md-28 mb-4 mb-md-0 mr-md-8"
-          >
+          <div class="shrink-0 max-w-xs mx-auto w-full md:w-24 h-32 md:h-28 mb-4 mb-md-0 mr-md-8">
             <v-img :src="product.thumbnail" :alt="product.title" width="100%" height="100%" cover />
           </div>
           <div class="flex-grow-1 text-center text-md-left">
@@ -125,7 +122,7 @@ watch(
 
             <label class="text-body-1 font-weight-medium mb-0 d-block">Cantidad:</label>
 
-            <div class="d-flex align-center justify-center justify-md-start" style="gap: 0">
+            <div class="d-flex align-center justify-center justify-md-start gap-0">
               <v-btn
                 icon
                 variant="flat"
@@ -151,7 +148,7 @@ watch(
                 class="quantity-input"
               >
                 <template v-slot:prepend-inner>
-                  <span style="opacity: 0; pointer-events: none">0</span>
+                  <span class="opacity-0 pointer-events-none">0</span>
                 </template>
               </v-text-field>
 

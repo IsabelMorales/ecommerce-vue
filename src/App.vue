@@ -72,15 +72,10 @@ const hasActiveFilters = computed(() => {
 const filteredProducts = computed(() => {
   let result = allProducts.value
 
-  // Filtrar por búsqueda de nombre (usa el valor debounced)
   if (searchNameQueryDebounced.value.trim() !== '') {
     const query = searchNameQueryDebounced.value.toLowerCase().trim()
     result = result.filter((product) => product.title.toLowerCase().includes(query))
   }
-
-  // No necesitamos filtrar por categorías porque:
-  // - Si hay categorías seleccionadas, allProducts ya contiene solo esas categorías
-  // - Si no hay categorías seleccionadas, no hay filtro que aplicar
 
   return result
 })
@@ -121,7 +116,7 @@ const fetchAllCategories = async () => {
     errorMessage.value = null
   } catch (error) {
     console.error('Error fetching categories:', error)
-    errorMessage.value = null // No mostramos error en categorías para no bloquear la UI
+    errorMessage.value = null
     try {
       const fallbackResponse = await fetch('https://dummyjson.com/products')
 
@@ -139,7 +134,6 @@ const fetchAllCategories = async () => {
       }
     } catch (fallbackError) {
       console.error('Error in fallback fetching categories:', fallbackError)
-      // Si el fallback también falla, dejamos categoriesForFilter vacío
       categoriesForFilter.value = []
     }
   }
@@ -174,8 +168,6 @@ const fetchProducts = async (page: number = 1) => {
 
     products.value = data.products
 
-    // Actualizar allProducts solo como caché (no se usa cuando no hay filtros activos)
-    // Cuando es página 1, asignar directamente; en otras páginas, agregar evitando duplicados
     if (page === 1) {
       allProducts.value = [...data.products]
     } else {
@@ -214,7 +206,6 @@ const changePage = async (page: number) => {
   }
 }
 
-// Función helper para manejar cambios en filtros
 const handleFiltersChange = async (shouldReload: boolean = true) => {
   currentPage.value = 1
 
@@ -269,7 +260,6 @@ const loadAllProducts = async () => {
       if (allItems.length === 0 && selectedCategories.value.length > 0) {
         throw new Error('No se pudieron cargar los productos de las categorías seleccionadas.')
       }
-      // No necesitamos eliminar duplicados porque cada producto tiene una categoría única
     } else if (searchNameQueryDebounced.value.trim() !== '') {
       let skip = 0
       const limit = 100
@@ -318,6 +308,15 @@ const loadAllProducts = async () => {
   }
 }
 
+const handleRetry = async () => {
+  errorMessage.value = null
+  if (hasActiveFilters.value) {
+    await loadAllProducts()
+  } else {
+    await fetchProducts(currentPage.value)
+  }
+}
+
 onMounted(async () => {
   await fetchAllCategories()
   await fetchProducts(1)
@@ -329,18 +328,15 @@ onMounted(async () => {
     <v-app-bar :elevation="1" class="px-2 px-md-8">
       <v-app-bar-title
         :class="
-          display.width.value < 400
-            ? 'text-caption text-sm-body-1 text-md-h5'
-            : 'text-body-1 text-md-h5'
+          display.xs.value ? 'text-caption text-sm-body-1 text-md-h5' : 'text-body-1 text-md-h5'
         "
         :style="{
-          maxWidth:
-            display.width.value < 400 ? '140px' : display.width.value < 800 ? '180px' : 'none',
+          maxWidth: display.xs.value ? '140px' : display.sm.value ? '180px' : 'none',
         }"
       >
         <span
-          :class="display.width.value < 800 ? 'text-truncate d-inline-block' : ''"
-          :style="display.width.value < 800 ? { maxWidth: '100%' } : {}"
+          :class="display.sm.value ? 'text-truncate d-inline-block' : ''"
+          :style="display.sm.value ? { maxWidth: '100%' } : {}"
         >
           Alternova E-commerce
         </span>
@@ -349,19 +345,13 @@ onMounted(async () => {
 
       <v-btn
         icon
-        :class="display.width.value < 400 ? 'mr-12' : 'mr-4'"
+        :class="display.xs.value ? 'mr-12' : 'mr-4'"
         @click.stop="openCartDrawer"
-        :min-width="display.width.value < 400 ? '36' : '40'"
-        :height="display.width.value < 400 ? '36' : '40'"
+        :min-width="display.xs.value ? '36' : '40'"
+        :height="display.xs.value ? '36' : '40'"
       >
-        <v-badge
-          location="top right"
-          color="primary"
-          :content="cartStore.totalItems"
-          :offset-x="display.width.value < 400 ? 2 : 4"
-          :offset-y="display.width.value < 400 ? 2 : 4"
-        >
-          <v-icon icon="mdi-cart" :size="display.width.value < 400 ? '20' : '24'" />
+        <v-badge location="top right" color="primary" :content="cartStore.totalItems">
+          <v-icon icon="mdi-cart" :size="display.xs.value ? '20' : '24'" />
         </v-badge>
       </v-btn>
     </v-app-bar>
@@ -422,14 +412,7 @@ onMounted(async () => {
               variant="outlined"
               size="small"
               prepend-icon="mdi-refresh"
-              @click="
-                errorMessage = null
-                if (hasActiveFilters) {
-                  loadAllProducts()
-                } else {
-                  fetchProducts(currentPage)
-                }
-              "
+              @click="handleRetry"
               class="ml-4"
             >
               Reintentar
@@ -481,9 +464,17 @@ onMounted(async () => {
             lg="3"
             class="d-flex"
           >
-            <v-card class="d-flex flex-column w-100" :class="{ 'opacity-60': product.stock === 0 }">
+            <v-card
+              variant="flat"
+              class="d-flex flex-column w-100 border border-grey-lighten-2"
+              :class="{ 'opacity-60': product.stock === 0 }"
+            >
               <div class="position-relative">
-                <v-img height="200" :src="product.thumbnail" cover></v-img>
+                <v-img
+                  :height="display.xs.value ? 220 : display.sm.value ? 240 : 280"
+                  :src="product.thumbnail"
+                  cover
+                ></v-img>
                 <v-chip
                   v-if="product.stock === 0"
                   color="error"
@@ -504,7 +495,7 @@ onMounted(async () => {
                 </v-chip>
               </div>
 
-              <v-card-title class="pb-0">{{ product.title }}</v-card-title>
+              <v-card-title class="pb-0 text-wrap">{{ product.title }}</v-card-title>
               <v-card-subtitle>{{ product.category }}</v-card-subtitle>
               <v-card-text class="text-h6 pb-0 pt-2 font-weight-bold">
                 {{ product.price }}$

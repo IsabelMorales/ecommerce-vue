@@ -14,7 +14,6 @@ export interface CartProduct {
 
 const STORAGE_KEY = 'cart-items'
 
-// Función para cargar items desde localStorage
 const loadCartFromStorage = (): CartProduct[] => {
   if (typeof window === 'undefined') return []
 
@@ -78,10 +77,8 @@ export const useCartStore = defineStore('cart', () => {
     if (itemIndex >= 0) {
       const item = items.value[itemIndex]
       if (item) {
-        // Validar que la cantidad esté entre 1 y el stock disponible
         const validQuantity = Math.max(1, Math.min(newQuantity, item.stock))
 
-        // Mutar directamente (igual que en addToCart) - el watch deep: true lo detecta
         item.quantity = validQuantity
         item.totalPrice = validQuantity * item.price
       }

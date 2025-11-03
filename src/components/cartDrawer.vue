@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { computed } from 'vue'
 import { useCartStore } from '@/stores/cart'
 import { useDisplay } from 'vuetify'
 
@@ -14,6 +15,17 @@ const emit = defineEmits<{
 
 const cartStore = useCartStore()
 const display = useDisplay()
+
+const drawerWidth = computed(() => {
+  if (display.xs.value) {
+    // Use viewport width to ensure full coverage on mobile
+    return Math.min(display.width.value, window.innerWidth)
+  }
+  if (display.sm.value) {
+    return 320
+  }
+  return 400
+})
 
 const closeDrawer = () => {
   emit('update:modelValue', false)
@@ -34,13 +46,13 @@ const increaseQuantity = (productId: number, currentQuantity: number) => {
     @update:model-value="emit('update:modelValue', $event)"
     location="right"
     temporary
-    width="400"
-    class="pr-10 pr-sm-0"
+    :width="drawerWidth"
+    scrim
   >
     <template v-slot:prepend>
       <v-list-item prepend-icon="mdi-cart" title="Carrito de Compras" subtitle="Tus productos">
         <template v-slot:append>
-          <v-btn icon="mdi-close" variant="text" @click="closeDrawer" />
+          <v-btn icon="mdi-close" variant="text" @click.stop="closeDrawer" />
         </template>
       </v-list-item>
     </template>
@@ -83,7 +95,7 @@ const increaseQuantity = (productId: number, currentQuantity: number) => {
           </div>
 
           <!-- Selector de cantidad -->
-          <div class="d-flex align-center mb-2" style="gap: 8px">
+          <div class="d-flex align-center mb-2 gap-2">
             <span class="text-body-2 text-grey-darken-1 mr-2">Cantidad:</span>
             <v-btn
               icon="mdi-minus"
@@ -94,10 +106,7 @@ const increaseQuantity = (productId: number, currentQuantity: number) => {
               :disabled="item.quantity <= 1"
               @click="decreaseQuantity(item.id, item.quantity)"
             />
-            <span
-              class="text-body-2 font-weight-medium"
-              style="min-width: 24px; text-align: center"
-            >
+            <span class="text-body-2 font-weight-medium min-w-6 text-center">
               {{ item.quantity }}
             </span>
             <v-btn
@@ -123,7 +132,7 @@ const increaseQuantity = (productId: number, currentQuantity: number) => {
     </v-list>
 
     <!-- Estado vacío -->
-    <div v-else class="d-flex flex-column align-center justify-center pa-8" style="height: 100%">
+    <div v-else class="d-flex flex-column align-center justify-center pa-8 h-full">
       <v-icon size="64" color="grey-lighten-1">mdi-cart-off</v-icon>
       <p class="text-h6 mt-4 text-grey">Tu carrito está vacío</p>
       <p class="text-body-2 text-grey text-center mt-2">Agrega productos desde el catálogo</p>
@@ -132,7 +141,7 @@ const increaseQuantity = (productId: number, currentQuantity: number) => {
     <!-- Footer con total y botones de acción -->
     <template v-slot:append>
       <v-divider></v-divider>
-      <div v-if="cartStore.items.length > 0" class="pa-4">
+      <div v-if="cartStore.items.length > 0" :class="display.xs.value ? 'pa-4 pr-8' : 'pa-4'">
         <div class="d-flex justify-space-between align-center mb-4">
           <span class="text-h6 font-weight-bold">Total a pagar:</span>
           <span class="text-h6 text-primary font-weight-bold">
